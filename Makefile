@@ -5,13 +5,12 @@ INSTALL_BINDIR = $(INSTALL_PREFIX)/bin
 
 # toolchain
 PKG_CONFIG ?= pkg-config
-PYTHON ?= python
-
-
+PYTHON ?= python2
+LUA ?= lua53
 # flags
-LUA_LIBS := $(shell $(PKG_CONFIG) --libs lua 2>/dev/null || echo "-llua")
+LUA_LIBS := $(shell $(PKG_CONFIG) --libs $(LUA) 2>/dev/null || echo "-llua")
 LIBS += -lm -lpthread $(LUA_LIBS) -ldl
-LUA_CFLAGS := $(shell $(PKG_CONFIG) --cflags lua 2>/dev/null || echo "-I/usr/include/lua")
+LUA_CFLAGS := $(shell $(PKG_CONFIG) --cflags $(LUA) 2>/dev/null || echo "-I/usr/include/lua")
 CFLAGS += $(LUA_CFLAGS)
 
 
@@ -22,11 +21,18 @@ TXT2C_LUA = $(wildcard src/*.lua)
 
 
 # make rules
-all: $(TARGETS)
+all: check_config $(TARGETS)
+
+check_config:
+	@echo "====="
+	@echo "$(PKG_CONFIG) $(LUA)"
+	@echo "$(shell $(PKG_CONFIG) --libs $(LUA) 2>/dev/null)"
+	@echo "$(shell $(PKG_CONFIG) --libs $(LUA))"
+	@echo "-----"
 
 src/tools/txt2c: src/tools/txt2c.c
 
-src/internal_base.h: src/tools/txt2c
+src/internal_base.h: src/tools/txt2c $(TXT2C_LUA)
 	src/tools/txt2c $(TXT2C_LUA) > src/internal_base.h
 
 src/main.o: src/internal_base.h src/main.c
@@ -45,5 +51,5 @@ clean:
 	rm -f $(BAM_OBJ) $(TARGETS) src/internal_base.h src/tools/txt2c
 
 
-.PHONY: all test install clean
+.PHONY: all test install clean check_config
 
